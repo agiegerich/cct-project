@@ -6,6 +6,40 @@ import re
 with open('part0001', 'r') as myfile:
     data=myfile.read()
 
+def is_date(word):
+    date_regex = re.compile('\A[1-9][0-9][0-9][0-9][,.!?]\Z')
+    if date_regex.match(word):
+        return True
+    else:
+        return False
+
+def get_date(word):
+    return word[0:4]
+
+def most_common_date(article):
+    max_kv = None
+    date_dict = {}
+    words = article.split()
+    for word in words:
+        if not is_date(word):
+            continue
+        
+        date = get_date(word)
+
+        if date in date_dict:
+            date_dict[date] += 1
+            if date_dict[date] > max_kv[1]:
+                max_kv = (date, date_dict[date])
+        else:
+            date_dict[date] = 1
+            if max_kv is None:
+                max_kv = (date, 1)
+    if max_kv is None:
+        return ('N/A', 0)
+    else:
+        return max_kv
+
+
 def get_articles(chunk): 
     article_delim = re.compile('\$\$\$===cs5630s17===\$\$\$===Title===\$\$\$')
     articles = re.split(article_delim, chunk)
@@ -44,7 +78,8 @@ def parse_links(article_text):
 # parses an article to extract links, etc.
 def parse_article(article_text):
     links = parse_links(article_text)
-    return Article(parse_title(article_text), article_text, links, len(article_text.split())) 
+    words = article_text.split()
+    return Article(parse_title(article_text), links, most_common_date(article_text)) 
 
 # parses a chunk of wikipedia markup to extract articles, links, etc.
 def parse(chunk):
@@ -68,11 +103,13 @@ article_rdd = sc.parallelize(get_articles(data))
 article_rdd = article_rdd.map( lambda article: parse_article(article) )
 
 # print out some data we got
-stuff = article_rdd.take(3)
+stuff = article_rdd.take(40)
 for x in stuff:
     print('Title: '+x.title)
-    print('Wordcount: '+str(x.wordcount))
+    print('\tMCD: ('+x.most_common_date[0]+', '+str(x.most_common_date[1])+')')
+    '''
     for l in x.links:
         print('\tArticle Name: '+l.name)
         print('\tDisplay Name: '+l.display)
         print('')
+    ''' 

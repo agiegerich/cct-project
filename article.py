@@ -12,8 +12,8 @@ class Link:
         return cls(name, display)
 
 class Article:
-    def __init__(self, title, text, links, wordcount):
+    def __init__(self, title, links, most_common_date):
         self.title = title
-        self.text = text
         self.links = links
-        self.wordcount = wordcount
+        # In the format (date, appearance_count)
+        self.most_common_date = most_common_date
