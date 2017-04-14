@@ -48,13 +48,29 @@ text_rdd = text_rdd.map( lambda (line, index): (indices_of_titles[bisect.bisect(
 
 # the title should always come first so this clears out lines that occurred before the first title
 text_rdd = text_rdd.filter( lambda (title_index, (line, index)): title_index <= index)
-text_rdd = text_rdd.map( lambda (title_index, (line, index)): (title_index, [(line, index)]) )
+
+# need to put (line, index) into a list so we can reduce by key using append
+text_rdd = text_rdd.map( lambda (title_index, (line, index)): (title_index, [line]) )
+
+# combine all lines from the same article into one
 articles_rdd = text_rdd.reduceByKey(lambda a, b: a + b)
 
+articles_rdd = articles_rdd.map( lambda (title_index, line_list): (title_index, f.parse_article('\n'.join(line_list))))
 
 stuff = articles_rdd.take(1)
 for x in stuff:
-    print(x)
+    x = x[1]
+    print('Title: '+x.title)
+    print('\tMCD: ('+x.most_common_date[0]+', '+str(x.most_common_date[1])+')')
+   # for l in x.links:
+   #     print('\tArticle Name: '+l.name)
+   #     print('\tDisplay Name: '+l.display)
+   #     print('')
+
+'''
+stuff = articles_rdd.take(2)
+print(stuff[1][1].encode('ascii', 'ignore'))
+'''
 
 
 
@@ -72,12 +88,4 @@ for x in stuff:
 article_rdd = article_rdd.map( lambda article: f.parse_article(article) )
 
 # print out some data we got
-stuff = article_rdd.take(10)
-for x in stuff:
-    print('Title: '+x.title)
-    print('\tMCD: ('+x.most_common_date[0]+', '+str(x.most_common_date[1])+')')
-   # for l in x.links:
-   #     print('\tArticle Name: '+l.name)
-   #     print('\tDisplay Name: '+l.display)
-   #     print('')
 '''
