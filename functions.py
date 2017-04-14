@@ -11,6 +11,10 @@ def is_date(word):
 def get_date(word):
     return word[0:4]
 
+def get_greatest_element_less_than_value(lst, val):
+    return indices_of_titles[bisect.bisect(indices_of_titles, index) - 1]
+
+
 def most_common_date(article):
     max_kv = None
     date_dict = {}
