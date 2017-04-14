@@ -52,6 +52,7 @@ def parse_title(article):
         if c == '\n':
             break
         title += c
+    title = title.replace('$$$===cs5630s17===$$$===Title===$$$', '')
     return title.strip()
 
 # Convert text inside a link tag to a Link object.

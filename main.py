@@ -24,7 +24,9 @@ sc._jsc.hadoopConfiguration().set("fs.s3n.awsSecretAccessKey", aws_key)
 #with open('part0001', 'r') as myfile:
 #    data=myfile.read()
 
-text_rdd=sc.textFile('s3n://cs5630s17-instructor/wiki-text/part0001.gz')
+
+
+text_rdd=sc.textFile('s3n://cs5630s17-instructor/wiki-text/*')
 text_rdd=text_rdd.zipWithIndex()
 
 
@@ -57,6 +59,11 @@ articles_rdd = text_rdd.reduceByKey(lambda a, b: a + b)
 
 articles_rdd = articles_rdd.map( lambda (title_index, line_list): (title_index, f.parse_article('\n'.join(line_list))))
 
+output_rdd = articles_rdd.map(lambda (title_index, article) : article.title)
+
+output_rdd.saveAsTextFile('output')
+
+'''
 stuff = articles_rdd.take(1)
 for x in stuff:
     x = x[1]
@@ -66,26 +73,9 @@ for x in stuff:
    #     print('\tArticle Name: '+l.name)
    #     print('\tDisplay Name: '+l.display)
    #     print('')
+'''
 
 '''
 stuff = articles_rdd.take(2)
 print(stuff[1][1].encode('ascii', 'ignore'))
-'''
-
-
-
-#article_rdd = sc.parallelize(f.get_articles(data))
-#article_rdd = text_rdd.flatMap( lambda text: f.get_articles(text) )
-#stuff = article_rdd.take(3)
-
-"""
-for x in stuff:
-    print('ARTICLE: ')
-    print(x)
-"""
-
-'''
-article_rdd = article_rdd.map( lambda article: f.parse_article(article) )
-
-# print out some data we got
 '''
