@@ -16,7 +16,7 @@ class Link:
         return cls(name, display)
 
 class Article:
-    def __init__(self, title, links, most_common_date, mcp, era):
+    def __init__(self, title, links, most_common_date, mcp):
         self.current_link = 0
         self.title = title
         self.links = links
@@ -24,7 +24,6 @@ class Article:
         self.most_common_date = most_common_date
         # most common period in (begin, end) format
         self.mcp = mcp
-        self.era = era
 
     def __iter__(self):
         return self

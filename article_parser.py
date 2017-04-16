@@ -1,3 +1,6 @@
+import functions as f
+from const import Const
+
 class ArticleParser:
     def __init__(self, period):
         self.mcd_dict = {}
