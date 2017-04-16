@@ -1,7 +1,7 @@
 import re
 from article import Article
 from article import Link
-from article import Parser
+from article_parser import ArticleParser
 from const import Const
 
 def get_greatest_element_less_than_value(lst, val):
@@ -62,7 +62,7 @@ def parse_links(article_text):
 def parse_article(article_text):
     links = parse_links(article_text)
     words = article_text.split()
-    parser = Parser(Const.period)
+    parser = ArticleParser(Const.period)
     for word in words:
         parser.build_most_common_date(word)
         parser.build_mcp(word)
