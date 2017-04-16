@@ -20,4 +20,4 @@ sc.addPyFile('dependencies.zip')
 sc._jsc.hadoopConfiguration().set("fs.s3n.awsAccessKeyId", aws_id)
 sc._jsc.hadoopConfiguration().set("fs.s3n.awsSecretAccessKey", aws_key)
 
-apps.test(sc)
+apps.map_ids_to_title_and_save(sc)
