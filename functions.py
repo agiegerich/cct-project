@@ -7,39 +7,18 @@ from const import Const
 def get_greatest_element_less_than_value(lst, val):
     return indices_of_titles[bisect.bisect(indices_of_titles, index) - 1]
 
-def get_date(word):
-    return word[0:4]
+def extract_date_as_number(date):
+    match = re.search(Const.date_numbers_regex, date)
+    if match:
+        return int(match.group(1))
+    else:
+        return None
 
 def is_date(word):
     if Const.date_regex.match(word):
         return True
     else:
         return False
-
-'''
-def most_common_date(article):
-    max_kv = None
-    date_dict = {}
-    words = article.split()
-    for word in words:
-        if not is_date(word):
-            continue
-        
-        date = get_date(word)
-
-        if date in date_dict:
-            date_dict[date] += 1
-            if date_dict[date] > max_kv[1]:
-                max_kv = (date, date_dict[date])
-        else:
-            date_dict[date] = 1
-            if max_kv is None:
-                max_kv = (date, 1)
-    if max_kv is None:
-        return ('N/A', 0)
-    else:
-        return max_kv
-'''
 
 
 def get_articles(chunk): 
@@ -78,14 +57,16 @@ def parse_links(article_text):
     links = map(lambda l: convert_text_to_link(l), links)
     return links
 
+
 # parses an article to extract links, etc.
 def parse_article(article_text):
     links = parse_links(article_text)
     words = article_text.split()
-    parser = Parser()
+    parser = Parser(Const.period)
     for word in words:
         parser.build_most_common_date(word)
-    return Article(parse_title(article_text), links, parser.get_most_common_date()) 
+        parser.build_mcp(word)
+    return Article(parse_title(article_text), links, parser.get_most_common_date(), parser.get_mcp()) 
 
 # parses a chunk of wikipedia markup to extract articles, links, etc.
 def parse(chunk):

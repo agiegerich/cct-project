@@ -7,8 +7,6 @@ import functions as f
 config = ConfigParser.RawConfigParser()
 config.read('config.cfg')
 
-#aws_id = SECRET
-#aws_key = SECRET
 aws_id = config.get('DEFAULT','aws_id')
 aws_key = config.get('DEFAULT', 'aws_key')
 
@@ -21,12 +19,6 @@ sc.addPyFile('dependencies.zip')
 sc._jsc.hadoopConfiguration().set("fs.s3n.awsAccessKeyId", aws_id)
 sc._jsc.hadoopConfiguration().set("fs.s3n.awsSecretAccessKey", aws_key)
 
-# open part0001
-#with open('part0001', 'r') as myfile:
-#    data=myfile.read()
-
-
-
 text_rdd=sc.textFile('s3n://cs5630s17-instructor/wiki-text/part0001.gz')
 text_rdd=text_rdd.zipWithIndex()
 
@@ -37,14 +29,6 @@ title_index_rdd = title_index_rdd.map(lambda (line, index): index)
 # relatively small list of integers
 indices_of_titles = title_index_rdd.collect()
 indices_of_titles.sort()
-'''
-x = 0
-for i in indices_of_titles:
-    x += 1
-    if x > 20:
-        break
-    print(i)
-'''
 
 # Assigns each line to it's corresponding article title index
 text_rdd = text_rdd.map( lambda (line, index): (indices_of_titles[bisect.bisect(indices_of_titles, index) - 1], (line, index) ))
@@ -66,8 +50,9 @@ articles_rdd = articles_rdd.zipWithIndex().map( lambda ((title_index, article), 
 stuff = articles_rdd.take(10)
 
 for (index, article) in stuff:
-    print('index: '+ str(index))
-    print('length: '+str(article.title))
+    print('article: '+str(article.title))
+    print('mcd: '+str(article.most_common_date))
+    print('mcp: '+str(article.mcp))
     
 #output_rdd = articles_rdd.map(lambda (title_index, article) : article.title)
 
