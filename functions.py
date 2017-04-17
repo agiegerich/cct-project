@@ -41,20 +41,22 @@ def parse_title(article):
 def convert_text_to_link(link_text):
     link_names = link_text.split('|')
     if len(link_names) == 0:
-        return Link.create("INVALID")
+        return "INVALID-LINK"
+    else:
+        return link_names[0]
+    '''
     elif len(link_names) == 1:
         return Link.create(link_names[0]) 
     elif len(link_names[1]) > 0:
         return Link.create_with_display(link_names[0], link_names[1])
-    else:
-        return Link.create(link_names[0])
+    ''' 
 
 # Gets all the links from an article.
 def parse_links(article_text):
     links = re.findall('\[\[[^[\]]+\]\]', article_text)
     links = map(lambda l: l.replace('[[', ''), links)
     links = map(lambda l: l.replace(']]', ''), links)
-    links = map(lambda l: convert_text_to_link(l), links)
+    links = map(lambda l: convert_text_to_link(l).strip().replace(' ', '_'), links)
     return links
 
 

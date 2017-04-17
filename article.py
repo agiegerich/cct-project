@@ -3,17 +3,19 @@ import functions as f
 from const import Const
 
 class Link:
-    def __init__(self, name, display):
+    def __init__(self, name):
         self.name = name
-        self.display = display
+        #self.display = display
 
     @classmethod
     def create(cls, name):
-        return cls(name, name)
+        return cls(name)
 
+    '''
     @classmethod
     def create_with_display(cls, name, display):
         return cls(name, display)
+    '''
 
 class Article:
     def __init__(self, title, links, most_common_date, mcp):

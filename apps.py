@@ -41,25 +41,11 @@ def get_article_lines_rdd(sc):
 
     return articles_rdd
 
-def fully_parse(sc):
+def parse_links(sc):
     articles_rdd = get_article_lines_rdd(sc)
     # join all the lines in the same article into one block of text and then parse it into an article
-    articles_rdd = articles_rdd.map( lambda (title, line_list): (title, f.parse_article('\n'.join(line_list))))
-
-    articles_rdd = articles_rdd.zipWithIndex().map( lambda ((title, article), index): (index, article.title)) 
-
-    articles_rdd.saveAsPickleFile('s3n://agiegerich-wiki-text/id-title-assignment')
-
-    '''
-    for (index, article) in stuff:
-        print('article: '+str(article.title))
-        print('mcd: '+str(article.most_common_date))
-        print('mcp: '+str(article.mcp))
-    '''
-        
-    #output_rdd = articles_rdd.map(lambda (title_index, article) : article.title)
-
-    #output_rdd.saveAsTextFile('/home/agiegerich/cct-project/output')
+    articles_rdd = articles_rdd.map( lambda (title, line_list): (title, f.parse_links('\n'.join(line_list))))
+    articles_rdd.saveAsPickleFile('s3n://agiegerich-wiki-text/title-to-links-map')
 
 def isolate_date_lines_with_context(sc):
     articles_rdd = get_article_lines_rdd(sc)
