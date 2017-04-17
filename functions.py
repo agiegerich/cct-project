@@ -76,3 +76,25 @@ def parse(chunk):
         title = parse_title(article)
         article_dict[title] = parse_article(article)
     return article_dict
+
+def extract_dates(line_list):
+    dates = []
+    for line in line_list:
+        for regex, era in Const.line_contains_date_regex:
+            matches = re.findall(regex, line)
+            for m in matches:
+                dates.append(m)
+                # separator is just something that won't be parsed as a date. We don't want dates "combining" into new dates
+                line = line.replace(m, 'SEPARATOR') 
+    return dates
+       
+            
+
+def isolate_date_lines(line_list):
+    date_lines = []
+    for line in line_list:
+        for regex, era in Const.line_contains_date_regex:
+            if regex.search(line):
+                date_lines.append(line)
+                break
+    return date_lines
