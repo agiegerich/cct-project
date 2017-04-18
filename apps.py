@@ -5,13 +5,17 @@ import bisect
 import functions as f
 import ast
 
-def test(sc):
-    ids_rdd = sc.pickleFile('s3n://agiegerich-wiki-text/relevant-date-lines/*')
-    stuff = ids_rdd.take(10)
-    for (title, dates) in stuff:
-        print(title)
-        for d in dates:
-            print('\t'+d)
+def get_date_lines_rdd(sc):
+    # format is (title, [dates])
+    return sc.pickleFile('s3n://agiegerich-wiki-text/date_lines_attempt2/*')
+
+def save_article_to_periods(sc):
+    date_lines = get_date_lines_rdd(sc)
+    article_periods = date_lines.map(lambda (title, dates): (title, f.get_period(dates))).filter(lambda (title, period): period is not None);
+    article_periods.saveAsPickleFile('s3n://agiegerich-wiki-text/article_periods_full_1/')
+
+def get_date_periods(sc):
+    return sc.pickleFile('s3n://agiegerich-wiki-text/article_periods_full_1/part*')
 
 def get_article_lines_rdd(sc):
     text_rdd=sc.textFile('s3n://cs5630s17-instructor/wiki-text/part*')
@@ -66,12 +70,16 @@ def isolate_date_lines_with_context(sc):
 
     dates_rdd.saveAsPickleFile('s3n://agiegerich-wiki-text/date_lines_attempt2')
 
+ids_to_title_map_loc = 's3n://agiegerich-wiki-text/id-title-assignment-full-1/'
+def get_ids_to_title_map(sc):
+    return sc.pickleFile(ids_to_title_map_loc)
 
 def map_ids_to_title_and_save(sc): 
     articles_rdd = get_article_lines_rdd(sc)
     # join all the lines in the same article into one block of text and then parse it into an article
-    articles_rdd = articles_rdd.map( lambda (title_index, line_list): (title_index, f.parse_title(line_list[0])))
+    articles_rdd = articles_rdd.map( lambda (title_index, line_list): f.parse_title(line_list[0]) ).distinct()
 
-    articles_rdd = articles_rdd.zipWithIndex().map( lambda ((title_index, title), index): (index, title)) 
+    articles_rdd = articles_rdd.zipWithIndex().map( lambda (title, index): (index, title)) 
+    stuff = articles_rdd.take(10)
 
-    articles_rdd.saveAsPickleFile('s3n://agiegerich-wiki-text/id-title-assignment')
+    articles_rdd.saveAsPickleFile(ids_to_title_map_loc)

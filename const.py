@@ -6,6 +6,18 @@ class Const:
     month = '(?:January|February|March|May|June|July|August|September|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Nov|Dec)'
     day = '(?:(?:[1-2][0-9])|(?:3[0-1])|[1-9])'
     year = '(?:[1-9][0-9]*)'
+    year_matching = '([1-9][0-9]*)'
+
+    dmy = (re.compile('('+day+' '+month+' '+year+')'), 'AD')
+    mdy = (re.compile('('+month+' '+day+', '+year+')'), 'AD')
+
+    dmy_matching = (re.compile('('+day+' '+month+' '+year_matching+')'), 'AD')
+    mdy_matching = (re.compile('('+month+' '+day+', '+year_matching+')'), 'AD')
+    
+    with_day_regex = [
+        dmy_matching,
+        mdy_matching
+    ]
     line_contains_date_regex = [
         # this will match BC as well as BCE
         (re.compile('([1-9][0-9]* BC )'), 'BC'),
@@ -13,8 +25,8 @@ class Const:
         (re.compile('([1-9][0-9]* (?:AD|CE) )'), 'AD'),
         # AD must be preceded by a space
         (re.compile('( AD [1-9][0-9]{0,2})'), 'AD'),
-        (re.compile('('+day+' '+month+' '+year+')'), 'AD'),
-        (re.compile('('+month+' '+day+', '+year+')'), 'AD'),
+        dmy,
+        mdy,
         (re.compile('('+month+' '+year+')'), 'AD'),
         # ranges give a lot of bogus dates
         #(re.compile('([1-9][0-9]{0,3}-[1-9][0-9]{0,3})'), 'AD'),

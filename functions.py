@@ -7,12 +7,26 @@ from const import Const
 def get_greatest_element_less_than_value(lst, val):
     return indices_of_titles[bisect.bisect(indices_of_titles, index) - 1]
 
+def get_period(dates):
+    ap = ArticleParser(Const.period)
+    for d in dates:
+        ap.build_mcp(d)
+    return ap.get_mcp()
+
 def extract_date_as_number(date):
-    match = re.search(Const.date_numbers_regex, date)
-    if match:
-        return int(match.group(1))
-    else:
-        return None
+    # handle all the dates with the month and day in them
+    for (regex, era) in Const.with_day_regex:
+        match = re.search(regex, date)
+        if match:
+            return (int(match.group(2)), era)
+
+    # all other dates should only have one number, the year
+    for (regex, era) in Const.line_contains_date_regex:
+        if re.search(regex, date):
+            match = re.search(Const.year_matching, date) 
+            if match:
+                return (int(match.group(1)), era)
+    return None
 
 def is_date(word):
     if Const.date_regex.match(word):
