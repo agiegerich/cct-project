@@ -7,6 +7,23 @@ class Const:
     day = '(?:(?:[1-2][0-9])|(?:3[0-1])|[1-9])'
     year = '(?:[1-9][0-9]*)'
     year_matching = '([1-9][0-9]*)'
+    period = 5
+
+    ground_truth = [
+        ('Battle_of_the_Granicus', (-334, -334)),
+        ('Battle_of_Ipsus', (-301, -301)),
+        ('First_Punic_War', (-264, -241)),
+        ('First_Mithridatic_War', (-89, -85)),
+        ('Siege_of_Jerusalem_(63_BC)', (-63,-63)),
+        ('Battle_of_the_Teutoburg_Forest', (9, 9)),
+        ('Great_Fire_of_Rome', (64, 64)),
+        ('Eruption_of_Mount_Vesuvius_in_79', (79, 79)),
+        ('Bar_Kokhba_revolt', (132,136)),
+        ('Yellow_Turban_Rebellion', (184, 205)),
+        ('Constitutio_Antoniniana', (212, 212),
+        ('Battle_of_Strasbourg', (357, 357)),
+        ('Red_Turban_Rebellion', (1351, 1368)),
+    ]
 
     dmy = (re.compile('('+day+' '+month+' '+year+')'), 'AD')
     mdy = (re.compile('('+month+' '+day+', '+year+')'), 'AD')
@@ -52,4 +69,3 @@ class Const:
     date_regex = re.compile('\A[,.!?\(]*[1-2]?[0-9]?[0-9][0-9][,.!?\)]*\Z')
     date_numbers_regex = re.compile('([1-2]?[0-9]?[0-9][0-9])')
     max_year = 2999
-    period = 5
