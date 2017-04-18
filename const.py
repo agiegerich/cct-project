@@ -20,9 +20,9 @@ class Const:
         ('Eruption_of_Mount_Vesuvius_in_79', (79, 79)),
         ('Bar_Kokhba_revolt', (132,136)),
         ('Yellow_Turban_Rebellion', (184, 205)),
-        ('Constitutio_Antoniniana', (212, 212),
+        ('Constitutio_Antoniniana', (212, 212)),
         ('Battle_of_Strasbourg', (357, 357)),
-        ('Red_Turban_Rebellion', (1351, 1368)),
+        ('Red_Turban_Rebellion', (1351, 1368))
     ]
 
     dmy = (re.compile('('+day+' '+month+' '+year+')'), 'AD')

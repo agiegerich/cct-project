@@ -4,6 +4,7 @@ import re
 import bisect
 import functions as f
 import apps
+import pr
 
 config = ConfigParser.RawConfigParser()
 config.read('config.cfg')
@@ -24,7 +25,8 @@ sc._jsc.hadoopConfiguration().set("fs.s3n.awsSecretAccessKey", aws_key)
 #apps.isolate_date_lines_with_context(sc)
 #apps.test(sc)
 
-apps.save_article_to_periods(sc)
+#apps.save_article_to_periods(sc)
+pr.main(sc)
 
 #x = apps.get_date_periods(sc)
 #stuff = x.take(10)

@@ -5,6 +5,7 @@ import bisect
 import functions as f
 import ast
 
+
 def get_date_lines_rdd(sc):
     # format is (title, [dates])
     return sc.pickleFile('s3n://agiegerich-wiki-text/date_lines_attempt2/*')
