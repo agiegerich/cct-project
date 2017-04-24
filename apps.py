@@ -33,6 +33,19 @@ def get_article_lines_rdd(sc):
 
     return articles_rdd
 
+infobox_data_loc = 's3n://agiegerich-wiki-text/infobox_data/partaa*'
+def map_title_to_ground_truth_date(sc):
+    infobox_date_format = re.compile('(-?[0-9]{4})-[0-9]{2}-[0-9]{2}')
+    infobox_title_format = re.compile('<http://dbpedia.org/resource/(.+)>')
+    infobox_data = sc.textFile(infobox_data_loc)
+    infobox_data = infobox_data.filter( lambda line: '<http://dbpedia.org/ontology/date>' in line )
+    infobox_data = infobox_data.map( lambda line: (f.get_infobox_data(infobox_title_format, line), f.get_infobox_date(infobox_date_format, line)) )
+    infobox_data = infobox_data.filter( lambda (title, date): title is not None and date is not None) )
+    infobox_data = infobox_data.map( lambda (title, date): (title, int(date)) )
+    for x in infobox_data.take(30):
+        print(x)
+    
+
 
 articles_to_dates_loc = 's3n://agiegerich-wiki-text/articles_to_dates_test/'
 def get_date_lines_rdd(sc):

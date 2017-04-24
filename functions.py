@@ -34,6 +34,13 @@ def is_date(word):
     else:
         return False
 
+def get_infobox_data(regex, line):
+    matches = re.findall(regex, line)
+    for m in matches:
+        return m
+    return None
+    
+
 
 def get_articles(chunk): 
     article_delim = re.compile('\$\$\$===cs5630s17===\$\$\$===Title===\$\$\$')
