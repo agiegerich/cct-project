@@ -8,8 +8,10 @@ class Const:
     year = '(?:[1-9][0-9]*)'
     year_matching = '([1-9][0-9]*)'
     period = 5
+    references_sections = re.compile('^ *=+ *References *=+ *$')
 
     ground_truth = [
+        ('Battle_of_Marathon', (-490, -490)),
         ('Battle_of_the_Granicus', (-334, -334)),
         ('Battle_of_Ipsus', (-301, -301)),
         ('First_Punic_War', (-264, -241)),
@@ -48,8 +50,8 @@ class Const:
         # ranges give a lot of bogus dates
         #(re.compile('([1-9][0-9]{0,3}-[1-9][0-9]{0,3})'), 'AD'),
         # probably the most common word preceding a date
-        (re.compile('(in [1-9][0-9]{0,3})'), 'AD'),
-        (re.compile('(by [1-9][0-9]{0,3})'), 'AD'),
+        (re.compile('([iI]n [1-9][0-9]{0,3})'), 'AD'),
+        (re.compile('([^0-9] [bB]y [1-9][0-9]{0,3})'), 'AD'),
         # of gives a lot of bogus dates
         #(re.compile('(of [1-9][0-9]{0,3})'), 'AD'),
         # born
@@ -59,10 +61,10 @@ class Const:
         # died
         (re.compile('(d\. [1-9][0-9]{0,3})'), 'AD'),
         (re.compile('(circa [1-9][0-9]{0,3})'), 'AD'),
-        (re.compile('(from [1-9][0-9]{0,3})'), 'AD'),
-        (re.compile('(after [1-9][0-9]{0,3})'), 'AD'),
-        (re.compile('(before [1-9][0-9]{0,3})'), 'AD'),
-        (re.compile('(since [1-9][0-9]{0,3})'), 'AD'),
+        (re.compile('([fF]rom [1-9][0-9]{0,3})'), 'AD'),
+        (re.compile('([aA]fter [1-9][0-9]{0,3})'), 'AD'),
+        (re.compile('([bB]efore [1-9][0-9]{0,3})'), 'AD'),
+        (re.compile('([sS]ince [1-9][0-9]{0,3})'), 'AD'),
         # 1000-2099, after the current year and a little into the future, it's less likely to be a date
         (re.compile('( (?:1[0-9][0-9][0-9])|(?:20[0-9][0-9]) )'), 'AD'),
     ]

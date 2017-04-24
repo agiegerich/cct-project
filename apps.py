@@ -5,21 +5,8 @@ import bisect
 import functions as f
 import ast
 
-
-def get_date_lines_rdd(sc):
-    # format is (title, [dates])
-    return sc.pickleFile('s3n://agiegerich-wiki-text/date_lines_attempt2/*')
-
-def save_article_to_periods(sc):
-    date_lines = get_date_lines_rdd(sc)
-    article_periods = date_lines.map(lambda (title, dates): (title, f.get_period(dates))).filter(lambda (title, period): period is not None);
-    article_periods.saveAsPickleFile('s3n://agiegerich-wiki-text/article_periods_full_1/')
-
-def get_date_periods(sc):
-    return sc.pickleFile('s3n://agiegerich-wiki-text/article_periods_full_1/part*')
-
 def get_article_lines_rdd(sc):
-    text_rdd=sc.textFile('s3n://cs5630s17-instructor/wiki-text/part*')
+    text_rdd=sc.textFile('s3n://cs5630s17-instructor/wiki-text/part0001.gz')
     text_rdd=text_rdd.zipWithIndex()
 
     title_line_regex = re.compile('\$\$\$===cs5630s17===\$\$\$===Title===\$\$\$')
@@ -41,19 +28,20 @@ def get_article_lines_rdd(sc):
     # combine all lines from the same article into one
     articles_rdd = text_rdd.reduceByKey(lambda a, b: a + b)
 
-    # assign a title 
-    articles_rdd = articles_rdd.map( lambda (title_index, line_list): (f.parse_title(line_list[0]), line_list))
+    # assign a title  and remove the references
+    articles_rdd = articles_rdd.map( lambda (title_index, line_list): (f.parse_title(line_list[0]), f.remove_references_and_external_links(line_list)))
 
     return articles_rdd
 
-def parse_links(sc):
-    articles_rdd = get_article_lines_rdd(sc)
-    # join all the lines in the same article into one block of text and then parse it into an article
-    articles_rdd = articles_rdd.map( lambda (title, line_list): (title, f.parse_links('\n'.join(line_list))))
-    articles_rdd.saveAsPickleFile('s3n://agiegerich-wiki-text/title-to-links-map')
 
-def isolate_date_lines_with_context(sc):
+articles_to_dates_loc = 's3n://agiegerich-wiki-text/articles_to_dates_test/'
+def get_date_lines_rdd(sc):
+    # format is (title, [dates])
+    return sc.pickleFile(articles_to_dates_loc)
+
+def map_articles_to_dates(sc):
     articles_rdd = get_article_lines_rdd(sc)
+        
 
     date_line_rdd = articles_rdd.map( lambda (title, line_list): (title, f.extract_dates(line_list)))
     #date_line_rdd = articles_rdd.map( lambda (title, line_list): (title, f.isolate_date_lines(line_list)))
@@ -61,15 +49,24 @@ def isolate_date_lines_with_context(sc):
     # get rid of empty information
     dates_rdd = date_line_rdd.filter(lambda(title, date_list): len(date_list) > 0)
 
-    '''
-    stuff = dates_rdd.takeSample(False, 10)
-    for (title, dates) in stuff:
-        print(title)
-        for d in dates:
-            print('\t'+d)
-    '''
+    dates_rdd.saveAsPickleFile(articles_to_dates_loc)
 
-    dates_rdd.saveAsPickleFile('s3n://agiegerich-wiki-text/date_lines_attempt2')
+
+def save_article_to_periods(sc):
+    date_lines = get_date_lines_rdd(sc)
+    article_periods = date_lines.map(lambda (title, dates): (title, f.get_period(dates))).filter(lambda (title, period): period is not None);
+    article_periods.saveAsPickleFile('s3n://agiegerich-wiki-text/article_periods_full_1/')
+
+def get_date_periods(sc):
+    return sc.pickleFile('s3n://agiegerich-wiki-text/article_periods_full_1/part*')
+
+
+def parse_links(sc):
+    articles_rdd = get_article_lines_rdd(sc)
+    # join all the lines in the same article into one block of text and then parse it into an article
+    articles_rdd = articles_rdd.map( lambda (title, line_list): (title, f.parse_links('\n'.join(line_list))))
+    articles_rdd.saveAsPickleFile('s3n://agiegerich-wiki-text/title-to-links-map')
+
 
 ids_to_title_map_loc = 's3n://agiegerich-wiki-text/id-title-assignment-full-1/'
 def get_ids_to_title_map(sc):

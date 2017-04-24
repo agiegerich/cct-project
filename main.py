@@ -22,8 +22,13 @@ sc._jsc.hadoopConfiguration().set("fs.s3n.awsAccessKeyId", aws_id)
 sc._jsc.hadoopConfiguration().set("fs.s3n.awsSecretAccessKey", aws_key)
 
 #apps.test(sc)
-#apps.isolate_date_lines_with_context(sc)
+#apps.map_articles_to_dates(sc)
 #apps.test(sc)
+x = apps.get_date_lines_rdd(sc).take(15)
+for title, dates in x:
+    print(title)
+    for d in dates:
+        print('\t' + str(d))
 
 #apps.save_article_to_periods(sc)
 

@@ -51,6 +51,13 @@ def parse_title(article):
     title = title.replace('$$$===cs5630s17===$$$===Title===$$$', '')
     return title.strip()
 
+# Removes the references section and everything below it.
+def remove_references_and_external_links(article_lines): 
+    for i, line in enumerate(article_lines):
+        if re.match(Const.references_sections, line):
+            return article_lines[:(i-1 if i-1 >= 1 else 1)]
+    return article_lines
+
 # Convert text inside a link tag to a Link object.
 def convert_text_to_link(link_text):
     link_names = link_text.split('|')
