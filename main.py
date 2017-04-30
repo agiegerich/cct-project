@@ -4,7 +4,6 @@ import re
 import bisect
 import functions as f
 import apps
-import pr2
 
 config = ConfigParser.RawConfigParser()
 config.read('config.cfg')
@@ -22,14 +21,24 @@ sc._jsc.hadoopConfiguration().set("fs.s3n.awsAccessKeyId", aws_id)
 sc._jsc.hadoopConfiguration().set("fs.s3n.awsSecretAccessKey", aws_key)
 
 #apps.test(sc)
-#apps.map_articles_to_dates(sc)
+#apps.map_articles_to_dates(sc, 'part-001')
+#apps.map_articles_to_dates(sc, 'part-002')
+#apps.map_articles_to_dates(sc, 'part-003')
+#apps.map_articles_to_dates(sc, 'part-004')
+#apps.map_articles_to_dates(sc, 'part-005')
+#apps.map_articles_to_dates(sc, 'part-006')
+#apps.map_articles_to_dates(sc, 'part-007')
 #apps.test(sc)
-#apps.get_date_lines_rdd(sc)
-apps.map_title_to_ground_truth_date(sc)
+#apps.map_title_to_training_set_date(sc)
+#training_set= apps.get_training_set(sc)
+#for x in training_set.take(10):
+#    print(x)
+#print('COUNT IS: ' + str(training_set.count()))
+    
 #apps.save_article_to_periods(sc)
+#apps.save_computed_vs_truth(sc)
+apps.compute_accuracy(sc)
 
-#x = apps.get_date_periods(sc)
-#stuff = x.take(10)
 #for (title, period) in stuff:
 #    print(title)
 #    print(period)
