@@ -31,11 +31,12 @@ def get_article_lines_rdd(sc, part):
 
     # assign a title  and remove the references
     articles_rdd = articles_rdd.map( lambda (title_index, line_list): (f.parse_title(line_list[0]), f.remove_references_and_external_links(line_list)))
+    articles_rdd = articles_rdd.filter( lambda (title, line_list): not f.contains_redirect(line_list) )
 
     return articles_rdd
 
 infobox_data_loc = 's3n://agiegerich-wiki-text/infobox_data/part*'
-training_set_loc = 's3n://agiegerich-wiki-text/training_set/'
+training_set_loc = 's3n://agiegerich-wiki-text/ground_truth/'
 def map_title_to_training_set_date(sc):
     infobox_date_format = re.compile('(-?[0-9]{4})-[0-9]{2}-[0-9]{2}')
     infobox_title_format = re.compile('<http://dbpedia.org/resource/([^>]+)>')
@@ -51,42 +52,78 @@ def map_title_to_training_set_date(sc):
 def get_training_set(sc):
     return sc.pickleFile(training_set_loc)
 
-def save_training_articles(sc):
-    article_lines = get_article_lines_rdd(sc,'part*1.gz')
+
+training_articles_loc = 's3n://agiegerich-wiki-text/training_articles/'
+def save_training_articles(sc, part, training):
+    # (title, [lines])
+    article_lines = get_article_lines_rdd(sc, part+'*')
+    # (title, [dates])
+    # (title, ([lines], [dates])
+    article_lines.join(training).saveAsPickleFile(training_articles_loc+part)
 
 
-articles_to_dates_loc = 's3n://agiegerich-wiki-text/articles_to_dates_no_ref/'
-def get_article_to_dates_rdd(sc):
+# (title, ([lines], [dates])
+def get_training_articles(sc):
+    return sc.pickleFile(training_articles_loc+'*')
+
+
+articles_to_dates_loc = 's3n://agiegerich-wiki-text/articles_to_dates_no_ref_no_redir/'
+def pull_article_to_dates_rdd(sc):
     # format is (title, [dates])
     return sc.pickleFile(articles_to_dates_loc+'*/part*')
 
-def map_articles_to_dates(sc, part):
+def local_articles_to_dates(sc, part):
     articles_rdd = get_article_lines_rdd(sc, part+'*') 
     date_line_rdd = articles_rdd.map( lambda (title, line_list): (title, f.extract_dates(line_list)))
 
     # get rid of empty information
     dates_rdd = date_line_rdd.filter(lambda(title, date_list): len(date_list) > 0)
+    return dates_rdd
 
-    dates_rdd.saveAsPickleFile(articles_to_dates_loc+part)
+def train_on_training_data(sc):
+    # (title, ([lines], [dates])
+    rdd = get_training_articles(sc).map(lambda (title, (line_list, dates)): (title, (f.extract_dates(line_list), dates)))
+    rdd = rdd.filter(lambda(title, (date_list, truth_dates)): len(date_list) > 0)
+    rdd = rdd.map(lambda (title, (dates, truth_dates)): (title, (f.get_period(dates), truth_dates))).filter(lambda (title, (period, truth_dates)): period is not None);
+    total = rdd.count()
+    rdd = rdd.filter(lambda (title, (period, truth_dates)): period_contains_date(period, truth_dates))
+    correct = rdd.count()
+    print('TOTAL: '+str(total))
+    print('CORRECT: '+str(correct))
+
+
+def save_articles_to_dates(sc, part):
+    local_articles_to_dates(sc, part).saveAsPickleFile(articles_to_dates_loc+part)
 
 
 article_to_periods_loc = 's3n://agiegerich-wiki-text/article_periods_no_ref/'
-def local_article_to_periods(sc):
-    date_lines = get_article_to_dates_rdd(sc)
+def local_article_to_periods(sc, local_atd = False):
+    if local_atd:
+        date_lines = local_articles_to_dates(sc, 'part0010')
+    else:
+        date_lines = pull_article_to_dates_rdd(sc)
     return date_lines.map(lambda (title, dates): (title, f.get_period(dates))).filter(lambda (title, period): period is not None);
 
 
-def save_article_to_periods(sc):
-    local_article_to_periods(sc).saveAsPickleFile(article_to_periods_loc)
+def save_article_to_periods(sc, local_atd = False):
+    local_article_to_periods(sc, local_atd).saveAsPickleFile(article_to_periods_loc)
+
+article_to_periods_text_loc = 's3n://agiegerich-wiki-text/article_periods_no_ref_no_redir_text/'
+agiegerich_sep = "$$CCT_AGIEGERICH$$"
+def save_article_to_periods_sv(sc, local_atd = False):
+    local_article_to_periods(sc, local_atd).map(lambda (title, period): title + agiegerich_sep + str(period[0]) + agiegerich_sep + str(period[1])).saveAsTextFile(article_to_periods_text_loc)
 
 
 # (title, (start, end))
-def get_date_periods(sc):
+def pull_date_periods(sc):
     return sc.pickleFile(article_to_periods_loc+'*')
 
 computed_period_vs_truth_loc = 's3n://agiegerich-wiki-text/computed_period_vs_truth1/'
-def save_computed_vs_truth(sc):
-    article_to_period = get_date_periods(sc)
+def save_computed_vs_truth(sc, local_atp = False, local_atd = False):
+    if local_atp:
+        article_to_period = local_article_to_periods(sc, local_atd)
+    else:
+        article_to_period = pull_date_periods(sc)
     training_set = get_training_set(sc)
     # (title, (start, end)) JOIN (title, [dates]) = (title, ((start, end), dates))
     article_to_period.join(training_set).saveAsPickleFile(computed_period_vs_truth_loc)

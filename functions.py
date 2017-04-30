@@ -39,6 +39,12 @@ def get_infobox_data(regex, line):
     for m in matches:
         return m
     return None
+
+def contains_redirect(line_list):
+    for l in line_list:
+        if '#REDIRECT' in l:
+            return True
+    return False
     
 
 

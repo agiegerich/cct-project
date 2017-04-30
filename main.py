@@ -21,6 +21,7 @@ sc._jsc.hadoopConfiguration().set("fs.s3n.awsAccessKeyId", aws_id)
 sc._jsc.hadoopConfiguration().set("fs.s3n.awsSecretAccessKey", aws_key)
 
 #apps.test(sc)
+#apps.map_articles_to_dates(sc, 'part-000')
 #apps.map_articles_to_dates(sc, 'part-001')
 #apps.map_articles_to_dates(sc, 'part-002')
 #apps.map_articles_to_dates(sc, 'part-003')
@@ -37,7 +38,12 @@ sc._jsc.hadoopConfiguration().set("fs.s3n.awsSecretAccessKey", aws_key)
     
 #apps.save_article_to_periods(sc)
 #apps.save_computed_vs_truth(sc)
-apps.compute_accuracy(sc)
+#apps.compute_accuracy(sc)
+
+#training = apps.get_training_set(sc)
+#for part in range(0, 75):
+#    apps.save_training_articles(sc, 'part-'+str(part).zfill(4), training)
+apps.train_on_training_data(sc)
 
 #for (title, period) in stuff:
 #    print(title)
