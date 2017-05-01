@@ -17,23 +17,34 @@ class ArticleParser:
         if era == 'BC':
             date_as_int *= -1
         
+        p = self.period
         # add 1 to every date within the period of the given date
-        for i in range(date_as_int - self.period, date_as_int + self.period + 1):
+        for i in range(date_as_int - p, date_as_int + p + 1):
             if i not in self.mcp:
                 self.mcp[i] = 0
-            self.mcp[i] += 1
+            # weighted forward
+            #self.mcp[i] += (i-date_as_int+p)/float(p)
+            # weighted forward
+            #self.mcp[i] += (i-date_as_int+p)/float(p)
+            # weighted at center
+            #self.mcp[i] += float(1)/(abs(date_as_int-i)+1)
+            # weighted at center
+            self.mcp[i] += float(1)/(abs(date_as_int-i)+1)
 
     def get_mcp(self):
         max_count = 0
-        max_year = 0
+        max_year = []
         for (year, count) in self.mcp.items():
             if count > max_count:
                 max_count = count
-                max_year = year
+                max_year = [year]
+            elif count == max_count:
+                max_year += [year]
         if max_count == 0:
             return None
         else:
-            return (max_year-self.period, max_year+self.period)
+            avg = reduce(lambda x, y: x + y, max_year) / len(max_year)
+            return (avg-self.period, avg+self.period)
             
             
 

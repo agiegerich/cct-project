@@ -73,12 +73,13 @@ def pull_article_to_dates_rdd(sc):
     return sc.pickleFile(articles_to_dates_loc+'*/part*')
 
 def local_articles_to_dates(sc, part):
-    articles_rdd = get_article_lines_rdd(sc, part+'*') 
+    articles_rdd = get_article_lines_rdd(sc, part) 
     date_line_rdd = articles_rdd.map( lambda (title, line_list): (title, f.extract_dates(line_list)))
 
     # get rid of empty information
     dates_rdd = date_line_rdd.filter(lambda(title, date_list): len(date_list) > 0)
     return dates_rdd
+
 
 def train_on_training_data(sc):
     # (title, ([lines], [dates])
@@ -86,23 +87,32 @@ def train_on_training_data(sc):
     rdd = rdd.filter(lambda(title, (date_list, truth_dates)): len(date_list) > 0)
     rdd = rdd.map(lambda (title, (dates, truth_dates)): (title, (f.get_period(dates), truth_dates))).filter(lambda (title, (period, truth_dates)): period is not None);
     total = rdd.count()
-    rdd = rdd.filter(lambda (title, (period, truth_dates)): period_contains_date(period, truth_dates))
-    correct = rdd.count()
+    correct = rdd.filter(lambda (title, (period, truth_dates)): period_contains_date(period, truth_dates))
+    incorrect = rdd.filter(lambda (title, (period, truth_dates)): not period_contains_date(period, truth_dates))
+    correct_count = correct.count()
+    for x in incorrect.take(100):
+        print(x)
     print('TOTAL: '+str(total))
-    print('CORRECT: '+str(correct))
+    print('CORRECT: '+str(correct_count))
+    print('ACCURACY: '+str(float(correct_count)/total))
 
 
 def save_articles_to_dates(sc, part):
     local_articles_to_dates(sc, part).saveAsPickleFile(articles_to_dates_loc+part)
 
 
-article_to_periods_loc = 's3n://agiegerich-wiki-text/article_periods_no_ref/'
-def local_article_to_periods(sc, local_atd = False):
+article_to_periods_loc = 's3n://agiegerich-wiki-text/article_periods_no_ref_full_1/'
+def local_article_to_periods(sc, local_atd = False, part='part*'):
     if local_atd:
-        date_lines = local_articles_to_dates(sc, 'part0010')
+        date_lines = local_articles_to_dates(sc, part)
     else:
         date_lines = pull_article_to_dates_rdd(sc)
     return date_lines.map(lambda (title, dates): (title, f.get_period(dates))).filter(lambda (title, period): period is not None);
+
+def run_full(sc):
+    rdd = local_article_to_periods(sc, True, 'part-0071*').map(lambda (title, period): title.replace(',', ' ')+','+str(period[0])+','+str(period[1]))
+    rdd.repartition(1).saveAsTextFile(article_to_periods_loc)
+    
 
 
 def save_article_to_periods(sc, local_atd = False):
