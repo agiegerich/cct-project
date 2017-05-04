@@ -20,6 +20,8 @@ class Const:
         dmy_matching,
         mdy_matching
     ]
+    min_bc_ratio = 0.075
+    bc_regex = re.compile('([1-9][0-9]* (?:BC|BCE) )')
     line_contains_date_regex = [
         # this will match BC as well as BCE
         (re.compile('([1-9][0-9]* (?:BC|BCE) )'), 'BC'),
@@ -34,9 +36,10 @@ class Const:
         #(re.compile('([1-9][0-9]{0,3}-[1-9][0-9]{0,3})'), 'AD'),
         # probably the most common word preceding a date
         (re.compile('([iI]n [1-9][0-9]{0,3})'), 'AD'),
-        (re.compile('([^0-9] [bB]y [1-9][0-9]{0,3})'), 'AD'),
-        # of gives a lot of bogus dates
-        #(re.compile('(of [1-9][0-9]{0,3})'), 'AD'),
+        #(re.compile('([^0-9] [bB]y [1-9][0-9]{0,3})'), 'AD'),
+        #(re.compile('( of [1-9][0-9]{0,3})'), 'AD'),
+        (re.compile('( [fF]rom [1-9][0-9]{0,3} to )'), 'AD'),
+        (re.compile('( throughout [1-9][0-9]{0,3})'), 'AD'),
         # born
         #(re.compile('(b\. [1-9][0-9]{0,3})'), 'AD'),
         # circa
@@ -44,12 +47,11 @@ class Const:
         # died
         #(re.compile('(d\. [1-9][0-9]{0,3})'), 'AD'),
         (re.compile('(circa [1-9][0-9]{0,3})'), 'AD'),
-        #(re.compile('([fF]rom [1-9][0-9]{0,3})'), 'AD'),
         #(re.compile('([aA]fter [1-9][0-9]{0,3})'), 'AD'),
         #(re.compile('([bB]efore [1-9][0-9]{0,3})'), 'AD'),
-        #(re.compile('([sS]ince [1-9][0-9]{0,3})'), 'AD'),
+        (re.compile('([sS]ince [1-9][0-9]{0,3})'), 'AD')
         # 1000-2099, after the current year and a little into the future, it's less likely to be a date
-        (re.compile('( (?:1[0-9][0-9][0-9])|(?:20[0-2][0-9]) )'), 'AD'),
+        #(re.compile('( (?:1[0-9][0-9][0-9])|(?:20[0-2][0-9]) )'), 'AD'),
     ]
     date_regex = re.compile('\A[,.!?\(]*[1-2]?[0-9]?[0-9][0-9][,.!?\)]*\Z')
     date_numbers_regex = re.compile('([1-2]?[0-9]?[0-9][0-9])')

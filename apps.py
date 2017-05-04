@@ -5,9 +5,12 @@ import bisect
 import functions as f
 import ast
 from operator import add
+import math
+from const import Const
 
 def get_article_lines_rdd(sc, part):
-    text_rdd=sc.textFile('/user/hadoop/wiki-text/'+part)
+    #text_rdd=sc.textFile('/user/hadoop/wiki-text/'+part)
+    text_rdd=sc.textFile('s3n://cs5630s17-instructor/wiki-text/'+part)
     text_rdd=text_rdd.zipWithIndex()
 
     title_line_regex = re.compile('\$\$\$===cs5630s17===\$\$\$===Title===\$\$\$')
@@ -38,7 +41,7 @@ def get_article_lines_rdd(sc, part):
 infobox_data_loc = 's3n://agiegerich-wiki-text/infobox_data/part*'
 training_set_loc = 's3n://agiegerich-wiki-text/ground_truth/'
 def map_title_to_training_set_date(sc):
-    infobox_date_format = re.compile('(-?[0-9]{4})-[0-9]{2}-[0-9]{2}')
+    infobox_date_format = re.compile('(-?[0-9]{4})-0-9]{2}-[0-9]{2}')
     infobox_title_format = re.compile('<http://dbpedia.org/resource/([^>]+)>')
     infobox_data = sc.textFile(infobox_data_loc)
     infobox_data = infobox_data.filter( lambda line: '<http://dbpedia.org/ontology/date>' in line )
@@ -80,48 +83,77 @@ def local_articles_to_dates(sc, part):
     dates_rdd = date_line_rdd.filter(lambda(title, date_list): len(date_list) > 0)
     return dates_rdd
 
+def contains_bc(dates):
+    for d in dates:
+        if d < 0:
+            return True
+    return False
 
-def train_on_training_data(sc):
-    # (title, ([lines], [dates])
-    rdd = get_training_articles(sc).map(lambda (title, (line_list, dates)): (title, (f.extract_dates(line_list), dates)))
-    rdd = rdd.filter(lambda(title, (date_list, truth_dates)): len(date_list) > 0)
-    rdd = rdd.map(lambda (title, (dates, truth_dates)): (title, (f.get_period(dates), truth_dates))).filter(lambda (title, (period, truth_dates)): period is not None);
-    total = rdd.count()
-    correct = rdd.filter(lambda (title, (period, truth_dates)): period_contains_date(period, truth_dates))
-    incorrect = rdd.filter(lambda (title, (period, truth_dates)): not period_contains_date(period, truth_dates))
-    correct_count = correct.count()
-    for x in incorrect.take(100):
-        print(x)
-    print('TOTAL: '+str(total))
-    print('CORRECT: '+str(correct_count))
-    print('ACCURACY: '+str(float(correct_count)/total))
+
+def train_on_training_data(sc, ratio):
+    with open('output/'+str(ratio)+'.txt', 'a') as output_file:
+        ratio=float(ratio)/100
+        output_file.write(str(ratio)+'\n')
+        # (title, ([lines], [dates])
+        rdd = get_training_articles(sc).map(lambda (title, (line_list, dates)): (title, (f.extract_dates(line_list), dates)))
+        rdd = rdd.filter(lambda(title, (date_list, truth_dates)): len(date_list) > 0)
+        rdd = rdd.map(lambda(title, (date_list, truth_dates)): (title, (date_list, truth_dates, f.get_likely_era(date_list, ratio))))
+
+        rdd = rdd.map(lambda (title, (dates, truth_dates, era)): (title, (f.get_period(dates, era), truth_dates))).filter(lambda (title, (period, truth_dates)): period is not None);
+        total = rdd.count()
+        correct = rdd.filter(lambda (title, (period, truth_dates)): period_contains_date(period, truth_dates))
+        incorrect = rdd.filter(lambda (title, (period, truth_dates)): not period_contains_date(period, truth_dates))
+        correct_count = correct.count()
+        bc_incorrect = incorrect.filter(lambda (title, (period, truth_dates)): contains_bc(truth_dates))
+        bci_count = bc_incorrect.count()
+        bc_correct = correct.filter(lambda (title, (period, truth_dates)): contains_bc(truth_dates))
+        bcc_count = bc_correct.count()
+        for x in bc_incorrect.take(100):
+            print(x)
+        
+        output_file.write('\tBC CORRECT: '+str(bcc_count) + '\n')
+        output_file.write('\tBC TOTAL: '+str(bcc_count+bci_count) + '\n')
+        output_file.write('\tBC ACCURACY: '+str(float(bcc_count)/(bcc_count+bci_count)) + '\n')
+        output_file.write('\tTOTAL: '+str(total) + '\n')
+        output_file.write('\tCORRECT: '+str(correct_count) + '\n')
+        output_file.write('\tACCURACY: '+str(float(correct_count)/total) + '\n')
 
 
 def save_articles_to_dates(sc, part):
     local_articles_to_dates(sc, part).saveAsPickleFile(articles_to_dates_loc+part)
 
+def get_decade(period):
+    average = (period[0]+period[1])/2.0
+    decade = math.floor(average/10.0)*10
+    return int(decade)
 
-article_to_periods_loc = 's3n://agiegerich-wiki-text/article_periods_no_ref_full_1/'
-def local_article_to_periods(sc, local_atd = False, part='part*'):
+article_to_periods_loc = 's3n://agiegerich-wiki-text/article_periods_no_ref_full_2_0/'
+def local_article_to_periods(sc, ratio = Const.min_bc_ratio, local_atd = False, part='part*'):
     if local_atd:
         date_lines = local_articles_to_dates(sc, part)
     else:
         date_lines = pull_article_to_dates_rdd(sc)
-    return date_lines.map(lambda (title, dates): (title, f.get_period(dates))).filter(lambda (title, period): period is not None);
+    rdd = date_lines.map(lambda (title, dates): (title, (dates, f.get_likely_era(dates, ratio))))
+    rdd = rdd.map(lambda (title, (dates, era)): (title, f.get_period(dates, era)))
+    rdd = rdd.filter(lambda (title, period): period is not None);
+    return rdd
 
-def run_full(sc):
-    rdd = local_article_to_periods(sc, True, 'part-0071*').map(lambda (title, period): title.replace(',', ' ')+','+str(period[0])+','+str(period[1]))
-    rdd.repartition(1).saveAsTextFile(article_to_periods_loc)
+    
+
+def run_full(sc, part):
+    rdd = local_article_to_periods(sc, Const.min_bc_ratio, True, part+'*')
+    rdd = rdd.map(lambda (title, period): title.replace(',', ' ')+','+str(get_decade(period)))
+    rdd.saveAsTextFile(article_to_periods_loc+part)
     
 
 
 def save_article_to_periods(sc, local_atd = False):
-    local_article_to_periods(sc, local_atd).saveAsPickleFile(article_to_periods_loc)
+    local_article_to_periods(sc, Const.min_bc_ratio, local_atd).saveAsPickleFile(article_to_periods_loc)
 
 article_to_periods_text_loc = 's3n://agiegerich-wiki-text/article_periods_no_ref_no_redir_text/'
 agiegerich_sep = "$$CCT_AGIEGERICH$$"
 def save_article_to_periods_sv(sc, local_atd = False):
-    local_article_to_periods(sc, local_atd).map(lambda (title, period): title + agiegerich_sep + str(period[0]) + agiegerich_sep + str(period[1])).saveAsTextFile(article_to_periods_text_loc)
+    local_article_to_periods(sc, Const.min_bc_ratio, local_atd).map(lambda (title, period): title + agiegerich_sep + str(period[0]) + agiegerich_sep + str(period[1])).saveAsTextFile(article_to_periods_text_loc)
 
 
 # (title, (start, end))
@@ -131,7 +163,7 @@ def pull_date_periods(sc):
 computed_period_vs_truth_loc = 's3n://agiegerich-wiki-text/computed_period_vs_truth1/'
 def save_computed_vs_truth(sc, local_atp = False, local_atd = False):
     if local_atp:
-        article_to_period = local_article_to_periods(sc, local_atd)
+        article_to_period = local_article_to_periods(sc, Const.min_bc_ratio, local_atd)
     else:
         article_to_period = pull_date_periods(sc)
     training_set = get_training_set(sc)

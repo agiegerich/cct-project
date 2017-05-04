@@ -43,7 +43,12 @@ sc._jsc.hadoopConfiguration().set("fs.s3n.awsSecretAccessKey", aws_key)
 #training = apps.get_training_set(sc)
 #for part in range(0, 75):
 #    apps.save_training_articles(sc, 'part-'+str(part).zfill(4), training)
-apps.run_full(sc)
+
+for part in range(0, 8):
+    apps.run_full(sc, 'part'+str(part).zfill(2))
+
+
+#apps.train_on_training_data(sc, 20)
 
 #for (title, period) in stuff:
 #    print(title)

@@ -3,7 +3,8 @@ from const import Const
 
 
 class ArticleParser:
-    def __init__(self, period):
+    def __init__(self, period, era):
+        self.likely_era = era
         self.mcd_dict = {}
         self.mcd_max_kv = None
         self.period = period
@@ -14,7 +15,7 @@ class ArticleParser:
         (date_as_int, era) = f.extract_date_as_number(date)
         if date_as_int is None:
             return
-        if era == 'BC':
+        if self.likely_era == 'BC':
             date_as_int *= -1
         
         p = self.period

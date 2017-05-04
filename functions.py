@@ -7,11 +7,31 @@ from const import Const
 def get_greatest_element_less_than_value(lst, val):
     return indices_of_titles[bisect.bisect(indices_of_titles, index) - 1]
 
-def get_period(dates):
-    ap = ArticleParser(Const.period)
+def get_period(dates, era):
+    ap = ArticleParser(Const.period, era)
     for d in dates:
         ap.build_mcp(d)
     return ap.get_mcp()
+
+def get_likely_era(dates, ratio):
+    bc_count = 0
+    ad_count = 0
+    for date in dates:
+        regex = Const.bc_regex
+        match = re.search(regex, date)
+        if match:
+            bc_count += 1
+        else:
+            ad_count += 1
+    if bc_count == 0:
+        return 'AD'
+    elif ad_count == 0:
+        return 'BC'
+    elif float(bc_count)/ad_count >= ratio:
+        return 'BC'
+    else:
+        return 'AD'
+        
 
 def extract_date_as_number(date):
     # handle all the dates with the month and day in them
@@ -19,7 +39,6 @@ def extract_date_as_number(date):
         match = re.search(regex, date)
         if match:
             return (int(match.group(2)), era)
-
     # all other dates should only have one number, the year
     for (regex, era) in Const.line_contains_date_regex:
         if re.search(regex, date):
@@ -123,14 +142,3 @@ def extract_dates(line_list):
                 # separator is just something that won't be parsed as a date. We don't want dates "combining" into new dates
                 line = line.replace(m, 'SEPARATOR') 
     return dates
-       
-            
-
-def isolate_date_lines(line_list):
-    date_lines = []
-    for line in line_list:
-        for regex, era in Const.line_contains_date_regex:
-            if regex.search(line):
-                date_lines.append(line)
-                break
-    return date_lines
