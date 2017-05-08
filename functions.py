@@ -13,6 +13,7 @@ def get_period(dates, era):
         ap.build_mcp(d)
     return ap.get_mcp()
 
+# Gets the likely era for a list of dates.
 def get_likely_era(dates, ratio):
     bc_count = 0
     ad_count = 0
@@ -31,7 +32,6 @@ def get_likely_era(dates, ratio):
         return 'BC'
     else:
         return 'AD'
-        
 
 def extract_date_as_number(date):
     # handle all the dates with the month and day in them
@@ -64,8 +64,6 @@ def contains_redirect(line_list):
         if '#REDIRECT' in l:
             return True
     return False
-    
-
 
 def get_articles(chunk): 
     article_delim = re.compile('\$\$\$===cs5630s17===\$\$\$===Title===\$\$\$')
