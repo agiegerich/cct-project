@@ -20,7 +20,7 @@ class Const:
         dmy_matching,
         mdy_matching
     ]
-    min_bc_ratio = 0.075
+    min_bc_ratio = 0.20
     bc_regex = re.compile('([1-9][0-9]* (?:BC|BCE) )')
     line_contains_date_regex = [
         # this will match BC as well as BCE

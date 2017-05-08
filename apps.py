@@ -8,6 +8,7 @@ from operator import add
 import math
 from const import Const
 
+# Gets and RDD of each article mapped  to the list of lines in that article.
 def get_article_lines_rdd(sc, part):
     #text_rdd=sc.textFile('/user/hadoop/wiki-text/'+part)
     text_rdd=sc.textFile('s3n://cs5630s17-instructor/wiki-text/'+part)
@@ -127,7 +128,7 @@ def get_decade(period):
     decade = math.floor(average/10.0)*10
     return int(decade)
 
-article_to_periods_loc = 's3n://agiegerich-wiki-text/article_periods_no_ref_full_2_0/'
+article_to_periods_loc = 's3n://agiegerich-wiki-text/article_periods_no_ref_full_final_20/'
 def local_article_to_periods(sc, ratio = Const.min_bc_ratio, local_atd = False, part='part*'):
     if local_atd:
         date_lines = local_articles_to_dates(sc, part)
